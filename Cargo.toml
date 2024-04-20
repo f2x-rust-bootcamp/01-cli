@@ -17,3 +17,5 @@ serde_yaml = "0.9.34"
 rand = "0.8.5"
 zxcvbn = "2.2.2"
 base64 = "0.22.0"
+blake3 = "1.5.1"
+ed25519-dalek = { version = "2.1.1", features = ["rand_core"] }
