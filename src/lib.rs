@@ -1,5 +1,5 @@
-mod opts;
+mod opt;
 mod process;
 
-pub use opts::{Opts, SubCommand};
+pub use opt::{Base64SubCommand, Opts, SubCommand};
 pub use process::*;

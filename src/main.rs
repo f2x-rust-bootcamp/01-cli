@@ -21,6 +21,14 @@ fn main() -> anyhow::Result<()> {
                 opts.symbol,
             )?;
         }
+        SubCommand::Base64(subcmd) => match subcmd {
+            Base64SubCommand::Encode(opts) => {
+                process_encode(&opts.input, opts.format)?;
+            }
+            Base64SubCommand::Decode(opts) => {
+                process_decode(&opts.input, opts.format)?;
+            }
+        },
     }
 
     Ok(())
