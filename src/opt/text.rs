@@ -14,6 +14,12 @@ pub enum TextSubCommand {
 
     #[command(about = "Generate a key")]
     Generate(TextKeyGenerateOpts),
+
+    #[command(about = "Encrypt a string")]
+    Encrypt(TextKeyOpts),
+
+    #[command(about = "Decrypt a string")]
+    Decrypt(TextKeyOpts),
 }
 
 #[derive(Debug, Parser)]
@@ -50,6 +56,15 @@ pub struct TextKeyGenerateOpts {
 
     #[arg(short, long, value_parser = verify_path)]
     pub output: PathBuf,
+}
+
+#[derive(Debug, Parser)]
+pub struct TextKeyOpts {
+    #[arg(short, long, value_parser = verify_file, default_value = "-")]
+    pub input: String,
+
+    #[arg(short, long)]
+    pub key: String,
 }
 
 #[derive(Debug, Clone, Copy)]

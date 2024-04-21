@@ -1,8 +1,9 @@
 use clap::Parser;
 use cli::*;
-use std::fs;
+use std::{env, fs};
 
 fn main() -> anyhow::Result<()> {
+    env::set_var("RUST_BACKTRACE", "1");
     let opts = Opts::parse();
     match opts.cmd {
         SubCommand::Csv(opts) => {
@@ -59,6 +60,14 @@ fn main() -> anyhow::Result<()> {
                         fs::write(name.join("ed25519_public.txt"), &key[1])?;
                     }
                 }
+            }
+            TextSubCommand::Encrypt(opts) => {
+                let val = process_text_encrypt(&opts.input, &opts.key)?;
+                println!("{:?}", val);
+            }
+            TextSubCommand::Decrypt(opts) => {
+                let val = process_text_decrypt(&opts.input, &opts.key)?;
+                println!("{:?}", val);
             }
         },
     }

@@ -1,8 +1,10 @@
 use crate::{get_reader, process_gen_pass, TextSignFormat};
 use anyhow::Result;
+use base64::engine::general_purpose::STANDARD;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+use chacha20poly1305::{aead::Aead, ChaCha20Poly1305, Key, KeyInit};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
-use rand::rngs::OsRng;
+use rand::rngs;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -86,7 +88,42 @@ pub fn process_text_generate(format: TextSignFormat) -> Result<Vec<Vec<u8>>> {
     }
 }
 
+pub fn process_text_encrypt(input: &str, key: &str) -> Result<String> {
+    let mut reader = get_reader(input)?;
+    let mut buf = String::new();
+    reader.read_to_string(&mut buf)?;
+    let buf = buf.trim();
+
+    let sk = Key::from_slice(key.as_bytes()); // 32-bytes
+    let cipher = ChaCha20Poly1305::new(sk);
+    let nonce = [0u8; 12];
+
+    let ciphertext = cipher.encrypt(&nonce.into(), buf.as_ref()).unwrap();
+    let ciphertext = STANDARD.encode(ciphertext);
+
+    Ok(ciphertext)
+}
+
+// for ex
+pub fn process_text_decrypt(input: &str, key: &str) -> Result<String> {
+    let mut reader = get_reader(input)?;
+    let mut buf = String::new();
+    reader.read_to_string(&mut buf)?;
+    let buf = buf.trim();
+
+    let ciphertext = STANDARD.decode(buf)?;
+
+    let sk = Key::from_slice(key.as_bytes()); // 32-bytes
+    let cipher = ChaCha20Poly1305::new(sk);
+    let nonce = [0u8; 12];
+
+    let decrypted = cipher.decrypt(&nonce.into(), ciphertext.as_ref()).unwrap();
+    let decrypted = String::from_utf8_lossy(&decrypted);
+    Ok(decrypted.to_string())
+}
+
 /// Blake3 implementation for TextVerify, KeyLoader, KeyGenerate, and TextSign
+
 impl TextSign for Blake3 {
     fn sign(&self, reader: &mut dyn Read) -> Result<Vec<u8>> {
         let mut buf = Vec::new();
@@ -139,7 +176,7 @@ impl KeyLoader for Ed25519Signer {
 
 impl KeyGenerator for Ed25519Signer {
     fn generate() -> Result<Vec<Vec<u8>>> {
-        let mut csprng = OsRng;
+        let mut csprng = rngs::OsRng;
         let sk = SigningKey::generate(&mut csprng);
         let pk = sk.verifying_key().to_bytes().to_vec();
         let sk = sk.as_bytes().to_vec();
@@ -230,6 +267,25 @@ mod tests {
         let sig = sk.sign(&mut &data[..])?;
 
         assert!(pk.verify(&mut &data[..], &sig)?);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encrypt_decrypt() -> Result<()> {
+        let key = process_gen_pass(32, true, true, true, true)?;
+        let key = key.as_bytes();
+        let key = Key::from_slice(key);
+
+        let data = "hello";
+        let cipher = ChaCha20Poly1305::new(key);
+        let nonce = [0u8; 12];
+
+        let ciphertext = cipher.encrypt(&nonce.into(), data.as_ref()).unwrap();
+        let decrypted = cipher.decrypt(&nonce.into(), ciphertext.as_ref()).unwrap();
+        let decrypted = String::from_utf8_lossy(&decrypted);
+
+        assert_eq!(data, decrypted);
 
         Ok(())
     }
