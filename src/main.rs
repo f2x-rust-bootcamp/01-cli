@@ -1,9 +1,10 @@
 use clap::Parser;
 use cli::*;
-use std::{env, fs};
+use std::fs;
 
-fn main() -> anyhow::Result<()> {
-    env::set_var("RUST_BACKTRACE", "1");
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
     let opts = Opts::parse();
     match opts.cmd {
         SubCommand::Csv(opts) => {
@@ -68,6 +69,11 @@ fn main() -> anyhow::Result<()> {
             TextSubCommand::Decrypt(opts) => {
                 let val = process_text_decrypt(&opts.input, &opts.key)?;
                 println!("{:?}", val);
+            }
+        },
+        SubCommand::Http(subcmd) => match subcmd {
+            HttpSubCommand::Serve(opts) => {
+                process_http_serve(opts.dir, opts.port).await?;
             }
         },
     }
