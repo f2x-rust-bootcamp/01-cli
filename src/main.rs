@@ -76,6 +76,16 @@ async fn main() -> anyhow::Result<()> {
                 process_http_serve(opts.dir, opts.port).await?;
             }
         },
+        SubCommand::Jwt(subcmd) => match subcmd {
+            JwtSubCommand::Sign(opts) => {
+                let token = process_jwt_sign(&opts.sub, &opts.aud, &opts.exp, &opts.key)?;
+                println!("{:?}", token);
+            }
+            JwtSubCommand::Verify(opts) => {
+                let claims = process_jwt_verify(&opts.input, &opts.key)?;
+                println!("{:?}", claims);
+            }
+        },
     }
 
     Ok(())

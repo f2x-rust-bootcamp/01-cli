@@ -2,6 +2,7 @@ mod base64;
 mod csv;
 mod gen_pass;
 mod http;
+mod jwt;
 mod text;
 
 use self::{csv::CsvOpts, gen_pass::GenPassOpts};
@@ -12,6 +13,7 @@ pub use self::{
     base64::{Base64Format, Base64SubCommand},
     csv::OutputFormat,
     http::HttpSubCommand,
+    jwt::JwtSubCommand,
     text::{TextSignFormat, TextSubCommand},
 };
 
@@ -38,6 +40,9 @@ pub enum SubCommand {
 
     #[command(subcommand)]
     Http(HttpSubCommand),
+
+    #[command(subcommand)]
+    Jwt(JwtSubCommand),
 }
 
 pub fn verify_file(filename: &str) -> Result<String, &'static str> {
