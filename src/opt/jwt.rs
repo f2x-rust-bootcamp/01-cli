@@ -1,4 +1,5 @@
 use super::verify_file;
+use crate::{process_jwt_sign, process_jwt_verify, CmdExecutor};
 use clap::Parser;
 
 #[derive(Debug, Parser)]
@@ -32,4 +33,33 @@ pub struct JwtVerifyOpts {
 
     #[arg(short, long)]
     pub key: String,
+}
+
+///
+/// impl CmdExecutor
+///
+
+impl CmdExecutor for JwtSignOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let token = process_jwt_sign(&self.sub, &self.aud, &self.exp, &self.key)?;
+        println!("{:?}", token);
+        Ok(())
+    }
+}
+
+impl CmdExecutor for JwtVerifyOpts {
+    async fn execute(self) -> anyhow::Result<()> {
+        let claims = process_jwt_verify(&self.input, &self.key)?;
+        println!("{:?}", claims);
+        Ok(())
+    }
+}
+
+impl CmdExecutor for JwtSubCommand {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            JwtSubCommand::Sign(opts) => opts.execute().await,
+            JwtSubCommand::Verify(opts) => opts.execute().await,
+        }
+    }
 }

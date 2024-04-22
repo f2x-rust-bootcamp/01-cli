@@ -6,6 +6,7 @@ mod jwt;
 mod text;
 
 use self::{csv::CsvOpts, gen_pass::GenPassOpts};
+use crate::CmdExecutor;
 use clap::Parser;
 use std::path::{Path, PathBuf};
 
@@ -60,6 +61,19 @@ pub fn verify_path(path: &str) -> Result<PathBuf, &'static str> {
         Ok(path.into())
     } else {
         Err("Path does not exist or is not a directory")
+    }
+}
+
+impl CmdExecutor for SubCommand {
+    async fn execute(self) -> anyhow::Result<()> {
+        match self {
+            SubCommand::Csv(opts) => opts.execute().await,
+            SubCommand::GenPass(opts) => opts.execute().await,
+            SubCommand::Base64(cmd) => cmd.execute().await,
+            SubCommand::Text(cmd) => cmd.execute().await,
+            SubCommand::Http(cmd) => cmd.execute().await,
+            SubCommand::Jwt(cmd) => cmd.execute().await,
+        }
     }
 }
 
