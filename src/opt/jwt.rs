@@ -1,8 +1,10 @@
 use super::verify_file;
 use crate::{process_jwt_sign, process_jwt_verify, CmdExecutor};
 use clap::Parser;
+use enum_dispatch::enum_dispatch;
 
 #[derive(Debug, Parser)]
+#[enum_dispatch(CmdExecutor)]
 pub enum JwtSubCommand {
     #[command(about = "Sign a string")]
     Sign(JwtSignOpts),
@@ -52,14 +54,5 @@ impl CmdExecutor for JwtVerifyOpts {
         let claims = process_jwt_verify(&self.input, &self.key)?;
         println!("{:?}", claims);
         Ok(())
-    }
-}
-
-impl CmdExecutor for JwtSubCommand {
-    async fn execute(self) -> anyhow::Result<()> {
-        match self {
-            JwtSubCommand::Sign(opts) => opts.execute().await,
-            JwtSubCommand::Verify(opts) => opts.execute().await,
-        }
     }
 }
