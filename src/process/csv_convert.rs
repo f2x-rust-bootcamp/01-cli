@@ -2,6 +2,7 @@ use crate::opt::OutputFormat;
 use csv::Reader;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use simple_excel_writer::*;
 use std::fs;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -26,12 +27,40 @@ pub fn process_csv(input: &str, output: String, format: OutputFormat) -> anyhow:
         ret.push(json_value);
     }
 
-    let content = match format {
-        OutputFormat::Json => serde_json::to_string_pretty(&ret)?,
-        OutputFormat::Yaml => serde_yaml::to_string(&ret)?,
-    };
+    match format {
+        OutputFormat::Json => {
+            let content = serde_json::to_string_pretty(&ret)?;
+            fs::write(output, content)?;
+        }
+        OutputFormat::Yaml => {
+            let content = serde_yaml::to_string(&ret)?;
+            fs::write(output, content)?;
+        }
+        OutputFormat::Xlsx => {
+            let mut wb = Workbook::create(&output);
+            let mut sheet = wb.create_sheet("Sheet1");
 
-    fs::write(output, content)?;
+            // set column width
+            sheet.add_column(Column { width: 20.0 });
+            sheet.add_column(Column { width: 10.0 });
+            sheet.add_column(Column { width: 20.0 });
+            sheet.add_column(Column { width: 20.0 });
+            sheet.add_column(Column { width: 30.0 });
+
+            wb.write_sheet(&mut sheet, |sheet_writer| {
+                for rows in ret.as_slice() {
+                    let mut row = Row::new();
+                    for (_, val) in rows.as_object().unwrap().iter() {
+                        row.add_cell(val.to_string().trim_matches('"'));
+                    }
+                    sheet_writer.append_row(row)?;
+                }
+                Ok(())
+            })?;
+
+            wb.close()?;
+        }
+    };
 
     Ok(())
 }

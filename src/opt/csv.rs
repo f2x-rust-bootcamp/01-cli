@@ -8,6 +8,7 @@ use std::str::FromStr;
 pub enum OutputFormat {
     Json,
     Yaml,
+    Xlsx,
 }
 
 #[derive(Debug, Parser)]
@@ -33,6 +34,7 @@ impl From<OutputFormat> for &'static str {
         match format {
             OutputFormat::Json => "json",
             OutputFormat::Yaml => "yaml",
+            OutputFormat::Xlsx => "xlsx",
         }
     }
 }
@@ -44,6 +46,7 @@ impl FromStr for OutputFormat {
         match value {
             "json" => Ok(OutputFormat::Json),
             "yaml" => Ok(OutputFormat::Yaml),
+            "xlsx" => Ok(OutputFormat::Xlsx),
             _ => Err(anyhow::anyhow!("Invalid format")),
         }
     }
